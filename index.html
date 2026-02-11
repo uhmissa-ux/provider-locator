@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -444,8 +443,19 @@ function scheduleAppointment() {
                     </div>
 
                     <div class="form-group">
-                        <label for="searchZip">Zip Code (10 mile radius)</label>
+                        <label for="searchZip">Zip Code</label>
                         <input type="text" id="searchZip" class="form-control" placeholder="Enter zip code..." maxlength="5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="searchRadius">Search Radius</label>
+                        <select id="searchRadius" class="form-control">
+                            <option value="5">5 miles</option>
+                            <option value="10" selected>10 miles</option>
+                            <option value="15">15 miles</option>
+                            <option value="25">25 miles</option>
+                            <option value="50">50 miles</option>
+                        </select>
                     </div>
 
                     <div class="radio-row">
@@ -518,6 +528,3 @@ function scheduleAppointment() {
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD000y0rYrIm0RDUhRErWrt5Da7pXOpYZc&callback=initMap" async defer></script>
 </body>
 </html>
-
-
-
