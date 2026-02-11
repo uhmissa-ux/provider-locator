@@ -167,9 +167,9 @@
 
         // Filter providers with optional radius search
         function filterProvidersWithRadius(nameQuery, specialtyQuery, genderQuery, acceptingOnly, zipLat, zipLng) {
-// Get the selected radius from the dropdown, default to 10 if not found
-const radiusSelect = document.getElementById('searchRadius');
-const RADIUS_MILES = radiusSelect ? parseInt(radiusSelect.value) : 10;
+// Get the selected radius from the radio buttons, default to 10 if not found
+const radiusInput = document.querySelector('input[name="radius"]:checked');
+const RADIUS_MILES = radiusInput ? parseInt(radiusInput.value) : 10;
 
             filteredProviders = allProviders.filter(provider => {
                 const matchesName = !nameQuery || 
@@ -408,3 +408,4 @@ const RADIUS_MILES = radiusSelect ? parseInt(radiusSelect.value) : 10;
         // Show loading initially
 
         document.getElementById('loading').classList.add('active');
+
