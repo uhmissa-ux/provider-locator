@@ -1,4 +1,4 @@
-        let map;
+ let map;
         let markers = [];
         let infoWindow;
         let geocoder;
@@ -101,7 +101,7 @@
             }
         }
 
-        // Populate filter dropdowns
+        // Populate filter checkboxes
         function populateFilters() {
             const specialties = new Set();
 
@@ -109,14 +109,34 @@
                 specialties.add(provider.Specialty);
             });
 
-            // Populate specialty dropdown
-            const specialtySelect = document.getElementById('searchSpecialty');
-            [...specialties].sort().forEach(specialty => {
-                const option = document.createElement('option');
-                option.value = specialty;
-                option.textContent = specialty;
-                specialtySelect.appendChild(option);
+            // Populate specialty checkboxes
+            const specialtyContainer = document.getElementById('specialtyCheckboxes');
+            const sortedSpecialties = [...specialties].sort();
+            
+            sortedSpecialties.forEach(specialty => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-group';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `specialty_${specialty.replace(/\s+/g, '_')}`;
+                checkbox.value = specialty;
+                checkbox.name = 'specialty';
+                
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = specialty;
+                
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                specialtyContainer.appendChild(div);
             });
+        }
+
+        // Get selected specialties
+        function getSelectedSpecialties() {
+            const checkboxes = document.querySelectorAll('input[name="specialty"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
         }
 
         // Calculate distance between two lat/lng points in miles (Haversine formula)
@@ -136,8 +156,9 @@
             event.preventDefault();
 
             const nameQuery = document.getElementById('searchName').value.toLowerCase();
-            const specialtyQuery = document.getElementById('searchSpecialty').value;
+            const selectedSpecialties = getSelectedSpecialties();
             const zipQuery = document.getElementById('searchZip').value.trim();
+            const radiusMiles = parseInt(document.getElementById('radiusSelect').value);
             const genderQuery = document.querySelector('input[name="gender"]:checked').value;
             const acceptingOnly = document.getElementById('acceptingPatients').checked;
 
@@ -154,28 +175,27 @@
                         const zipLat = zipLocation.lat();
                         const zipLng = zipLocation.lng();
                         
-                        filterProvidersWithRadius(nameQuery, specialtyQuery, genderQuery, acceptingOnly, zipLat, zipLng);
+                        filterProvidersWithRadius(nameQuery, selectedSpecialties, genderQuery, acceptingOnly, zipLat, zipLng, radiusMiles);
                     } else {
                         alert('Could not find location for zip code: ' + zipQuery);
-                        filterProvidersWithRadius(nameQuery, specialtyQuery, genderQuery, acceptingOnly, null, null);
+                        filterProvidersWithRadius(nameQuery, selectedSpecialties, genderQuery, acceptingOnly, null, null, radiusMiles);
                     }
                 });
             } else {
-                filterProvidersWithRadius(nameQuery, specialtyQuery, genderQuery, acceptingOnly, null, null);
+                filterProvidersWithRadius(nameQuery, selectedSpecialties, genderQuery, acceptingOnly, null, null, radiusMiles);
             }
         }
 
         // Filter providers with optional radius search
-        function filterProvidersWithRadius(nameQuery, specialtyQuery, genderQuery, acceptingOnly, zipLat, zipLng) {
-            const RADIUS_MILES = 10;
-
+        function filterProvidersWithRadius(nameQuery, selectedSpecialties, genderQuery, acceptingOnly, zipLat, zipLng, radiusMiles) {
             filteredProviders = allProviders.filter(provider => {
                 const matchesName = !nameQuery || 
                     provider['First Name'].toLowerCase().includes(nameQuery) ||
                     provider['Last Name'].toLowerCase().includes(nameQuery);
                 
-                const matchesSpecialty = !specialtyQuery || 
-                    provider.Specialty === specialtyQuery;
+                // If no specialties selected, show all. Otherwise, check if provider's specialty is in selected list
+                const matchesSpecialty = selectedSpecialties.length === 0 || 
+                    selectedSpecialties.includes(provider.Specialty);
                 
                 let matchesZip = true;
                 if (zipLat !== null && zipLng !== null) {
@@ -184,7 +204,7 @@
                     
                     if (!isNaN(providerLat) && !isNaN(providerLng)) {
                         const distance = calculateDistance(zipLat, zipLng, providerLat, providerLng);
-                        matchesZip = distance <= RADIUS_MILES;
+                        matchesZip = distance <= radiusMiles;
                     } else {
                         matchesZip = false;
                     }
@@ -208,14 +228,14 @@
                 map.setCenter({ lat: zipLat, lng: zipLng });
                 map.setZoom(11);
                 
-                // Add a circle to show the 20-mile radius
+                // Add a circle to show the radius
                 if (window.searchCircle) {
                     window.searchCircle.setMap(null);
                 }
                 window.searchCircle = new google.maps.Circle({
                     map: map,
                     center: { lat: zipLat, lng: zipLng },
-                    radius: RADIUS_MILES * 1609.34, // Convert miles to meters
+                    radius: radiusMiles * 1609.34, // Convert miles to meters
                     fillColor: '#667eea',
                     fillOpacity: 0.1,
                     strokeColor: '#667eea',
@@ -234,6 +254,11 @@
         // Clear search
         function clearSearch() {
             document.getElementById('searchForm').reset();
+            
+            // Uncheck all specialty checkboxes
+            const checkboxes = document.querySelectorAll('input[name="specialty"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            
             filteredProviders = allProviders;
             displayProviders(allProviders);
             clearMarkers();
